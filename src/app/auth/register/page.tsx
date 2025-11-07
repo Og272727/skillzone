@@ -1,0 +1,190 @@
+"use client";
+
+import { useState } from "react";
+import Link from "next/link";
+import { supabase } from "@/lib/supabase";
+
+export default function Register() {
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+    confirmPassword: "",
+    username: "",
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value,
+    }));
+  };
+
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+
+    if (formData.password !== formData.confirmPassword) {
+      setError("Passwords do not match");
+      setLoading(false);
+      return;
+    }
+
+    if (formData.password.length < 6) {
+      setError("Password must be at least 6 characters long");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const { error } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        options: {
+          data: {
+            username: formData.username,
+          },
+        },
+      });
+
+      if (error) {
+        setError(error.message);
+      } else {
+        // Show success message or redirect
+        alert(
+          "Registration successful! Please check your email to verify your account."
+        );
+        window.location.href = "/auth/login";
+      }
+    } catch (err) {
+      setError("An unexpected error occurred");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 flex items-center justify-center px-4">
+      <div className="max-w-md w-full bg-gray-800/50 backdrop-blur-sm rounded-lg p-8 border border-white/10">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-white mb-2">Join SkillZone</h1>
+          <p className="text-gray-300">
+            Create your account to start competing
+          </p>
+        </div>
+
+        <form onSubmit={handleRegister} className="space-y-6">
+          {error && (
+            <div className="bg-red-600/20 border border-red-600 text-red-400 px-4 py-3 rounded-lg">
+              {error}
+            </div>
+          )}
+
+          <div>
+            <label
+              htmlFor="username"
+              className="block text-sm font-medium text-gray-300 mb-2"
+            >
+              Username
+            </label>
+            <input
+              id="username"
+              name="username"
+              type="text"
+              value={formData.username}
+              onChange={handleChange}
+              required
+              className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Choose a username"
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="email"
+              className="block text-sm font-medium text-gray-300 mb-2"
+            >
+              Email
+            </label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              value={formData.email}
+              onChange={handleChange}
+              required
+              className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Enter your email"
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="password"
+              className="block text-sm font-medium text-gray-300 mb-2"
+            >
+              Password
+            </label>
+            <input
+              id="password"
+              name="password"
+              type="password"
+              value={formData.password}
+              onChange={handleChange}
+              required
+              className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Create a password"
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="confirmPassword"
+              className="block text-sm font-medium text-gray-300 mb-2"
+            >
+              Confirm Password
+            </label>
+            <input
+              id="confirmPassword"
+              name="confirmPassword"
+              type="password"
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              required
+              className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Confirm your password"
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white py-3 px-4 rounded-lg font-semibold transition-colors"
+          >
+            {loading ? "Creating account..." : "Create Account"}
+          </button>
+        </form>
+
+        <div className="mt-6 text-center">
+          <p className="text-gray-300">
+            Already have an account?{" "}
+            <Link
+              href="/auth/login"
+              className="text-blue-400 hover:text-blue-300 font-medium"
+            >
+              Sign in
+            </Link>
+          </p>
+        </div>
+
+        <div className="mt-4 text-center">
+          <Link href="/" className="text-gray-400 hover:text-gray-300 text-sm">
+            ← Back to home
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
