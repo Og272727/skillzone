@@ -3,6 +3,9 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { supabase } from "@/lib/supabase";
+import { User } from "@/types";
+import { User as AuthUser } from "@supabase/supabase-js";
 
 interface Tournament {
   id: string;
@@ -53,6 +56,67 @@ export default function Home() {
   const [tournaments, setTournaments] =
     useState<Tournament[]>(sampleTournaments);
   const [loading, setLoading] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    const getUser = async () => {
+      const {
+        data: { user: authUser },
+      } = await supabase.auth.getUser();
+
+      if (authUser) {
+        // Fetch additional user profile data from the profiles table
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", authUser.id)
+          .single();
+
+        if (profile) {
+          setUser({
+            id: authUser.id,
+            email: authUser.email || "",
+            nickname:
+              profile.nickname || authUser.user_metadata?.username || "",
+            wallet_balance: profile.wallet_balance || 0,
+            created_at: authUser.created_at,
+            game_accounts: profile.game_accounts || {},
+          });
+        }
+      }
+    };
+
+    getUser();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session?.user) {
+        // Fetch profile data when user signs in
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", session.user.id)
+          .single();
+
+        if (profile) {
+          setUser({
+            id: session.user.id,
+            email: session.user.email || "",
+            nickname:
+              profile.nickname || session.user.user_metadata?.username || "",
+            wallet_balance: profile.wallet_balance || 0,
+            created_at: session.user.created_at,
+            game_accounts: profile.game_accounts || {},
+          });
+        }
+      } else {
+        setUser(null);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900">
@@ -63,19 +127,44 @@ export default function Home() {
             <div className="flex items-center">
               <h1 className="text-2xl font-bold text-white">SkillZone</h1>
             </div>
-            <div className="flex space-x-4">
-              <Link
-                href="/auth/login"
-                className="text-white hover:text-blue-400 transition-colors"
-              >
-                Login
-              </Link>
-              <Link
-                href="/auth/register"
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
-              >
-                Sign Up
-              </Link>
+            <div className="flex items-center space-x-4">
+              {user ? (
+                <>
+                  <span className="text-white">
+                    GH₵ {user.wallet_balance?.toFixed(2) || "0.00"}
+                  </span>
+                  <Link
+                    href="/dashboard"
+                    className="text-white hover:text-blue-400 transition-colors"
+                  >
+                    {user.nickname || user.email}
+                  </Link>
+                  <button
+                    onClick={async () => {
+                      await supabase.auth.signOut();
+                      setUser(null);
+                    }}
+                    className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors"
+                  >
+                    Logout
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link
+                    href="/auth/login"
+                    className="text-white hover:text-blue-400 transition-colors"
+                  >
+                    Login
+                  </Link>
+                  <Link
+                    href="/auth/register"
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
+                  >
+                    Sign Up
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>
