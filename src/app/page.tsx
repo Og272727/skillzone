@@ -159,11 +159,11 @@ export default function Home() {
                       {tournament.game_type}
                     </p>
                     <p className="text-gray-300">
-                      <span className="font-medium">Entry Fee:</span> ₦
+                      <span className="font-medium">Entry Fee:</span> GH₵
                       {tournament.entry_fee}
                     </p>
                     <p className="text-gray-300">
-                      <span className="font-medium">Prize Pool:</span> ₦
+                      <span className="font-medium">Prize Pool:</span> GH₵
                       {tournament.prize_pool.toLocaleString()}
                     </p>
                     <p className="text-gray-300">
