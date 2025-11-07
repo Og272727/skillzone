@@ -2,19 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { User } from "@/types";
 import Link from "next/link";
 
-interface AuthUser {
-  id: string;
-  email?: string;
-  user_metadata?: {
-    username?: string;
-  };
-  created_at: string;
-}
-
 export default function Dashboard() {
-  const [user, setUser] = useState<AuthUser | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -23,7 +15,47 @@ export default function Dashboard() {
         data: { user },
       } = await supabase.auth.getUser();
       if (user) {
-        setUser(user);
+        // Fetch additional user profile data from the profiles table
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", user.id)
+          .single();
+
+        if (profile) {
+          setUser({
+            id: user.id,
+            email: user.email || "",
+            nickname: profile.nickname || user.user_metadata?.username || "",
+            wallet_balance: profile.wallet_balance || 0,
+            created_at: user.created_at,
+            game_accounts: profile.game_accounts || {},
+          });
+        } else {
+          // Create profile if it doesn't exist
+          const { data: newProfile, error } = await supabase
+            .from("profiles")
+            .insert({
+              id: user.id,
+              nickname: user.user_metadata?.username || "",
+              wallet_balance: 0,
+              game_accounts: {},
+            })
+            .select()
+            .single();
+
+          if (!error && newProfile) {
+            setUser({
+              id: user.id,
+              email: user.email || "",
+              nickname:
+                newProfile.nickname || user.user_metadata?.username || "",
+              wallet_balance: newProfile.wallet_balance || 0,
+              created_at: user.created_at,
+              game_accounts: newProfile.game_accounts || {},
+            });
+          }
+        }
       }
       setLoading(false);
     };
@@ -32,9 +64,26 @@ export default function Dashboard() {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
-        setUser(session.user);
+        // Fetch profile data when user signs in
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", session.user.id)
+          .single();
+
+        if (profile) {
+          setUser({
+            id: session.user.id,
+            email: session.user.email || "",
+            nickname:
+              profile.nickname || session.user.user_metadata?.username || "",
+            wallet_balance: profile.wallet_balance || 0,
+            created_at: session.user.created_at,
+            game_accounts: profile.game_accounts || {},
+          });
+        }
       } else {
         setUser(null);
       }
@@ -87,7 +136,7 @@ export default function Dashboard() {
             </Link>
             <div className="flex items-center space-x-4">
               <span className="text-gray-300">
-                Welcome, {user.user_metadata?.username || user.email}
+                Welcome, {user.nickname || user.email}
               </span>
               <button
                 onClick={handleLogout}
@@ -112,7 +161,7 @@ export default function Dashboard() {
               </p>
               <p className="text-gray-300">
                 <span className="font-semibold">Username:</span>{" "}
-                {user.user_metadata?.username || "Not set"}
+                {user.nickname || "Not set"}
               </p>
               <p className="text-gray-300">
                 <span className="font-semibold">Joined:</span>{" "}
