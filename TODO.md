@@ -8,8 +8,10 @@
 - [x] Create .env.local with credentials
 - [x] Set up Supabase client configuration
 - [x] Create database schema in Supabase
-- [ ] Build authentication system (register/login pages)
-- [ ] Style authentication with HTML forms and CSS
+- [x] Build authentication system (register/login pages)
+- [x] Style authentication with HTML forms and CSS
+- [x] Create user profile management page
+- [x] Fix landing page navigation to show user state
 
 ## Phase 2: Core Features
 
