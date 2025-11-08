@@ -16,6 +16,7 @@
 ## Phase 2: Core Features
 
 - [x] Build tournament creation system
+- [x] Build tournaments listing page
 - [x] Implement Paystack payment integration
 - [x] Build wallet system
 - [x] Implement team and payment system
