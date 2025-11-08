@@ -19,6 +19,9 @@ export default function Home() {
       max_teams: 50,
       status: "Open",
       schedule: "2024-01-20 20:00",
+      created_by: "sample-user",
+      created_at: "2024-01-01T00:00:00Z",
+      updated_at: "2024-01-01T00:00:00Z",
     },
     {
       id: "2",
@@ -29,6 +32,9 @@ export default function Home() {
       max_teams: 30,
       status: "Open",
       schedule: "2024-01-22 18:00",
+      created_by: "sample-user",
+      created_at: "2024-01-01T00:00:00Z",
+      updated_at: "2024-01-01T00:00:00Z",
     },
     {
       id: "3",
@@ -39,6 +45,9 @@ export default function Home() {
       max_teams: 25,
       status: "Open",
       schedule: "2024-01-27 15:00",
+      created_by: "sample-user",
+      created_at: "2024-01-01T00:00:00Z",
+      updated_at: "2024-01-01T00:00:00Z",
     },
   ];
 
