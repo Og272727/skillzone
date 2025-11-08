@@ -46,6 +46,7 @@ export default function Register() {
           data: {
             username: formData.username,
           },
+          emailRedirectTo: `${window.location.origin}/auth/confirm`,
         },
       });
 
