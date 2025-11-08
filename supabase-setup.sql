@@ -73,10 +73,10 @@ CREATE POLICY "Tournament creators can update their tournaments" ON public.tourn
 CREATE TABLE IF NOT EXISTS public.teams (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   tournament_id UUID REFERENCES public.tournaments(id) ON DELETE CASCADE,
-  name TEXT NOT NULL,
-  captain_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-  members JSONB DEFAULT '[]',
-  status TEXT DEFAULT 'Pending',
+  team_name TEXT NOT NULL,
+  leader_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  invite_code TEXT UNIQUE,
+  payment_status TEXT DEFAULT 'pending',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
@@ -91,8 +91,30 @@ CREATE POLICY "Anyone can view teams" ON public.teams
 CREATE POLICY "Authenticated users can create teams" ON public.teams
   FOR INSERT WITH CHECK (auth.role() = 'authenticated');
 
-CREATE POLICY "Team captains can update their teams" ON public.teams
-  FOR UPDATE USING (auth.uid() = captain_id);
+CREATE POLICY "Team leaders can update their teams" ON public.teams
+  FOR UPDATE USING (auth.uid() = leader_id);
+
+-- Create team_members table
+CREATE TABLE IF NOT EXISTS public.team_members (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  team_id UUID REFERENCES public.teams(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  joined_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+  UNIQUE(team_id, user_id)
+);
+
+-- Enable RLS on team_members
+ALTER TABLE public.team_members ENABLE ROW LEVEL SECURITY;
+
+-- Create policies for team_members
+CREATE POLICY "Anyone can view team members" ON public.team_members
+  FOR SELECT USING (true);
+
+CREATE POLICY "Authenticated users can join teams" ON public.team_members
+  FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+
+CREATE POLICY "Users can leave teams" ON public.team_members
+  FOR DELETE USING (auth.uid() = user_id);
 
 -- Create transactions table
 CREATE TABLE IF NOT EXISTS public.transactions (
@@ -100,9 +122,9 @@ CREATE TABLE IF NOT EXISTS public.transactions (
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
   type TEXT NOT NULL,
   amount DECIMAL(10,2) NOT NULL,
-  description TEXT,
-  reference TEXT,
-  status TEXT DEFAULT 'Pending',
+  status TEXT DEFAULT 'pending',
+  tournament_id UUID REFERENCES public.tournaments(id) ON DELETE CASCADE,
+  paystack_reference TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
 
