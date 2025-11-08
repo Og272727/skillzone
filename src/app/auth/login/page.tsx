@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
 export default function Login() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -25,7 +27,7 @@ export default function Login() {
         setError(error.message);
       } else {
         // Redirect to dashboard or home
-        window.location.href = "/";
+        router.push("/");
       }
     } catch (err) {
       setError("An unexpected error occurred");
