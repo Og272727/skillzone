@@ -12,22 +12,16 @@ export interface User {
 
 export interface Tournament {
   id: string;
-  host_id: string;
   name: string;
   game_type: string;
   entry_fee: number;
   prize_pool: number;
   max_teams: number;
-  rules: string;
-  format: string;
+  status: "Open" | "Closed" | "In Progress" | "Completed";
   schedule: string;
-  status: "draft" | "open" | "registration" | "in_progress" | "completed";
-  scoring_system: {
-    placement_points: { [key: number]: number };
-    kill_points: number;
-  };
-  lobby_link?: string;
+  created_by: string;
   created_at: string;
+  updated_at: string;
 }
 
 export interface Team {
@@ -38,6 +32,7 @@ export interface Team {
   payment_status: "pending" | "paid" | "refunded";
   invite_code: string;
   created_at: string;
+  team_members?: TeamMember[];
 }
 
 export interface TeamMember {

@@ -1,6 +1,7 @@
 import { PlayerPerformance, MatchResult } from "@/types";
 
-const CODAPI_BASE_URL = process.env.CODAPI_BASE_URL!;
+const CODAPI_BASE_URL =
+  process.env.NEXT_PUBLIC_CODAPI_BASE_URL || "https://api.codapi.dev";
 
 export class TrackingService {
   async getPlayerMatches(activisionId: string, platform: string) {

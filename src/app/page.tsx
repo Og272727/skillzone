@@ -4,19 +4,8 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
-import { User } from "@/types";
-import { User as AuthUser } from "@supabase/supabase-js";
-
-interface Tournament {
-  id: string;
-  name: string;
-  game_type: string;
-  entry_fee: number;
-  prize_pool: number;
-  max_teams: number;
-  status: string;
-  schedule: string;
-}
+import { User, Tournament } from "@/types";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function Home() {
   // Sample tournament data - will be replaced with real data from Supabase
@@ -53,69 +42,31 @@ export default function Home() {
     },
   ];
 
-  const [tournaments, setTournaments] =
-    useState<Tournament[]>(sampleTournaments);
-  const [loading, setLoading] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
+  const [tournaments, setTournaments] = useState<Tournament[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { user, signOut } = useAuth();
 
   useEffect(() => {
-    const getUser = async () => {
-      const {
-        data: { user: authUser },
-      } = await supabase.auth.getUser();
-
-      if (authUser) {
-        // Fetch additional user profile data from the profiles table
-        const { data: profile } = await supabase
-          .from("profiles")
+    const fetchTournaments = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("tournaments")
           .select("*")
-          .eq("id", authUser.id)
-          .single();
+          .order("created_at", { ascending: false })
+          .limit(6); // Show latest 6 tournaments
 
-        if (profile) {
-          setUser({
-            id: authUser.id,
-            email: authUser.email || "",
-            nickname:
-              profile.nickname || authUser.user_metadata?.username || "",
-            wallet_balance: profile.wallet_balance || 0,
-            created_at: authUser.created_at,
-            game_accounts: profile.game_accounts || {},
-          });
-        }
+        if (error) throw error;
+        setTournaments(data || []);
+      } catch (error) {
+        console.error("Error fetching tournaments:", error);
+        // Fallback to sample data if fetch fails
+        setTournaments(sampleTournaments);
+      } finally {
+        setLoading(false);
       }
     };
 
-    getUser();
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session?.user) {
-        // Fetch profile data when user signs in
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("id", session.user.id)
-          .single();
-
-        if (profile) {
-          setUser({
-            id: session.user.id,
-            email: session.user.email || "",
-            nickname:
-              profile.nickname || session.user.user_metadata?.username || "",
-            wallet_balance: profile.wallet_balance || 0,
-            created_at: session.user.created_at,
-            game_accounts: profile.game_accounts || {},
-          });
-        }
-      } else {
-        setUser(null);
-      }
-    });
-
-    return () => subscription.unsubscribe();
+    fetchTournaments();
   }, []);
 
   return (
@@ -139,11 +90,14 @@ export default function Home() {
                   >
                     {user.nickname || user.email}
                   </Link>
+                  <Link
+                    href="/wallet"
+                    className="text-white hover:text-blue-400 transition-colors ml-4"
+                  >
+                    Wallet
+                  </Link>
                   <button
-                    onClick={async () => {
-                      await supabase.auth.signOut();
-                      setUser(null);
-                    }}
+                    onClick={signOut}
                     className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors"
                   >
                     Logout
