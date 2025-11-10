@@ -13,6 +13,10 @@ export default function WalletPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [depositAmount, setDepositAmount] = useState("");
+  const [depositAccount, setDepositAccount] = useState({
+    mobileNumber: "",
+    network: "",
+  });
   const [withdrawalAmount, setWithdrawalAmount] = useState("");
   const [withdrawalAccount, setWithdrawalAccount] = useState({
     mobileNumber: "",
@@ -47,6 +51,18 @@ export default function WalletPage() {
   const handleDeposit = async () => {
     if (!user || !depositAmount || parseFloat(depositAmount) < 1) {
       alert("Minimum deposit amount is GH₵ 1.00");
+      return;
+    }
+
+    if (!depositAccount.mobileNumber || !depositAccount.network) {
+      alert("Please provide your mobile number and select network provider");
+      return;
+    }
+
+    // Validate Ghanaian mobile number format
+    const phoneRegex = /^0[2356789]\d{8}$/;
+    if (!phoneRegex.test(depositAccount.mobileNumber)) {
+      alert("Please enter a valid Ghanaian mobile number (e.g., 0241234567)");
       return;
     }
 
@@ -226,6 +242,48 @@ export default function WalletPage() {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Mobile Number
+                </label>
+                <input
+                  type="tel"
+                  value={depositAccount.mobileNumber}
+                  onChange={(e) =>
+                    setDepositAccount((prev) => ({
+                      ...prev,
+                      mobileNumber: e.target.value,
+                    }))
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Enter mobile number (e.g., 0241234567)"
+                />
+                <p className="text-sm text-gray-500 mt-1">
+                  Enter your Ghanaian mobile number
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Network Provider
+                </label>
+                <select
+                  value={depositAccount.network}
+                  onChange={(e) =>
+                    setDepositAccount((prev) => ({
+                      ...prev,
+                      network: e.target.value,
+                    }))
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="">Select network</option>
+                  <option value="MTN">MTN</option>
+                  <option value="Vodafone">Vodafone</option>
+                  <option value="AirtelTigo">AirtelTigo</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                   Amount (GH₵)
                 </label>
                 <input
@@ -243,7 +301,12 @@ export default function WalletPage() {
               </div>
               <button
                 onClick={handleDeposit}
-                disabled={processing || !depositAmount}
+                disabled={
+                  processing ||
+                  !depositAmount ||
+                  !depositAccount.mobileNumber ||
+                  !depositAccount.network
+                }
                 className="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {processing ? "Processing..." : "Deposit via Mobile Money"}
