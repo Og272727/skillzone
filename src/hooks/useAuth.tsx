@@ -17,33 +17,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let mounted = true;
+
     // Get initial session
     const getInitialSession = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
 
-      if (session?.user) {
-        // Fetch user profile
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("id", session.user.id)
-          .single();
+        if (session?.user && mounted) {
+          // Fetch user profile
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("*")
+            .eq("id", session.user.id)
+            .single();
 
-        if (profile) {
-          setUser({
-            id: profile.id,
-            email: profile.email || session.user.email || "",
-            nickname: profile.nickname || "",
-            wallet_balance: profile.wallet_balance || 0,
-            created_at: profile.created_at,
-            game_accounts: profile.game_accounts || {},
-          });
+          if (profile && mounted) {
+            setUser({
+              id: profile.id,
+              email: profile.email || session.user.email || "",
+              nickname: profile.nickname || "",
+              wallet_balance: profile.wallet_balance || 0,
+              created_at: profile.created_at,
+              game_accounts: profile.game_accounts || {},
+            });
+          }
+        }
+      } catch (error) {
+        console.error("Error getting initial session:", error);
+      } finally {
+        if (mounted) {
+          setLoading(false);
         }
       }
-
-      setLoading(false);
     };
 
     getInitialSession();
@@ -52,31 +60,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session?.user) {
-        // Fetch user profile
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("id", session.user.id)
-          .single();
+      if (session?.user && mounted) {
+        try {
+          // Fetch user profile
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("*")
+            .eq("id", session.user.id)
+            .single();
 
-        if (profile) {
-          setUser({
-            id: profile.id,
-            email: profile.email || session.user.email || "",
-            nickname: profile.nickname || "",
-            wallet_balance: profile.wallet_balance || 0,
-            created_at: profile.created_at,
-            game_accounts: profile.game_accounts || {},
-          });
+          if (profile && mounted) {
+            setUser({
+              id: profile.id,
+              email: profile.email || session.user.email || "",
+              nickname: profile.nickname || "",
+              wallet_balance: profile.wallet_balance || 0,
+              created_at: profile.created_at,
+              game_accounts: profile.game_accounts || {},
+            });
+          }
+        } catch (error) {
+          console.error("Error fetching profile on auth change:", error);
         }
-      } else {
+      } else if (mounted) {
         setUser(null);
       }
-      setLoading(false);
+
+      if (mounted) {
+        setLoading(false);
+      }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signOut = async () => {
