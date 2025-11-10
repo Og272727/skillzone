@@ -1,5 +1,3 @@
--- Enable Row Level Security
-ALTER TABLE IF EXISTS auth.users ENABLE ROW LEVEL SECURITY;
 
 -- Create profiles table
 CREATE TABLE IF NOT EXISTS public.profiles (
