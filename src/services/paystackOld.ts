@@ -103,68 +103,6 @@ export class PaystackService {
     return response.json();
   }
 
-  async createMobileMoneyRecipient(
-    mobileNumber: string,
-    network: string,
-    name: string
-  ) {
-    const response = await fetch(`${this.baseUrl}/transferrecipient`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        type: "mobile_money",
-        name,
-        account_number: mobileNumber,
-        bank_code: this.getNetworkCode(network),
-        currency: "GHS",
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error("Failed to create mobile money recipient");
-    }
-
-    return response.json();
-  }
-
-  async initiateMobileMoneyTransfer(
-    amount: number,
-    recipientCode: string,
-    reason: string
-  ) {
-    const response = await fetch(`${this.baseUrl}/transfer`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        source: "balance",
-        amount: amount * 100, // Convert to pesewas for mobile money
-        recipient: recipientCode,
-        reason,
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error("Failed to initiate mobile money transfer");
-    }
-
-    return response.json();
-  }
-
-  private getNetworkCode(network: string): string {
-    const networkCodes: { [key: string]: string } = {
-      MTN: "MTN",
-      Vodafone: "VOD",
-      AirtelTigo: "ATL",
-    };
-    return networkCodes[network] || network;
-  }
-
   getPublicKey() {
     return PAYSTACK_PUBLIC_KEY;
   }

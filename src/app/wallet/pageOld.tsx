@@ -15,8 +15,9 @@ export default function WalletPage() {
   const [depositAmount, setDepositAmount] = useState("");
   const [withdrawalAmount, setWithdrawalAmount] = useState("");
   const [withdrawalAccount, setWithdrawalAccount] = useState({
-    mobileNumber: "",
-    network: "",
+    accountNumber: "",
+    bankCode: "",
+    name: "",
   });
   const [processing, setProcessing] = useState(false);
 
@@ -45,7 +46,7 @@ export default function WalletPage() {
   };
 
   const handleDeposit = async () => {
-    if (!user || !depositAmount || parseFloat(depositAmount) < 1) {
+    if (!user || !depositAmount || parseFloat(depositAmount) < 100) {
       alert("Minimum deposit amount is GH₵ 1.00");
       return;
     }
@@ -95,7 +96,7 @@ export default function WalletPage() {
   };
 
   const handleWithdrawal = async () => {
-    if (!user || !withdrawalAmount || parseFloat(withdrawalAmount) < 5) {
+    if (!user || !withdrawalAmount || parseFloat(withdrawalAmount) < 500) {
       alert("Minimum withdrawal amount is GH₵ 5.00");
       return;
     }
@@ -105,15 +106,12 @@ export default function WalletPage() {
       return;
     }
 
-    if (!withdrawalAccount.mobileNumber || !withdrawalAccount.network) {
-      alert("Please provide your mobile number and select network provider");
-      return;
-    }
-
-    // Validate Ghanaian mobile number format
-    const phoneRegex = /^0[2356789]\d{8}$/;
-    if (!phoneRegex.test(withdrawalAccount.mobileNumber)) {
-      alert("Please enter a valid Ghanaian mobile number (e.g., 0241234567)");
+    if (
+      !withdrawalAccount.accountNumber ||
+      !withdrawalAccount.bankCode ||
+      !withdrawalAccount.name
+    ) {
+      alert("Please provide complete bank account details");
       return;
     }
 
@@ -122,20 +120,19 @@ export default function WalletPage() {
     try {
       const amount = parseFloat(withdrawalAmount);
 
-      // For mobile money withdrawal, we'll use Paystack's mobile money transfer
-      // This requires setting up mobile money recipients
-      const recipientData = await paystackService.createMobileMoneyRecipient(
-        withdrawalAccount.mobileNumber,
-        withdrawalAccount.network,
-        user.nickname || user.email
+      // Create transfer recipient
+      const recipientData = await paystackService.createTransferRecipient(
+        withdrawalAccount.accountNumber,
+        withdrawalAccount.bankCode,
+        withdrawalAccount.name
       );
 
       if (!recipientData.status) {
-        throw new Error("Failed to create mobile money recipient");
+        throw new Error("Failed to create transfer recipient");
       }
 
-      // Initiate transfer to mobile money
-      const transferData = await paystackService.initiateMobileMoneyTransfer(
+      // Initiate transfer
+      const transferData = await paystackService.initiateTransfer(
         amount,
         recipientData.data.recipient_code,
         `Withdrawal from SkillZone wallet - ${user.nickname || user.email}`
@@ -168,12 +165,12 @@ export default function WalletPage() {
 
         if (balanceError) throw balanceError;
 
-        alert("Withdrawal to mobile money initiated successfully!");
+        alert("Withdrawal initiated successfully!");
         setWithdrawalAmount("");
-        setWithdrawalAccount({ mobileNumber: "", network: "" });
+        setWithdrawalAccount({ accountNumber: "", bankCode: "", name: "" });
         fetchTransactions();
       } else {
-        throw new Error("Failed to initiate mobile money transfer");
+        throw new Error("Failed to initiate transfer");
       }
     } catch (error) {
       console.error("Withdrawal error:", error);
@@ -277,44 +274,56 @@ export default function WalletPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Mobile Number
+                  Account Number
                 </label>
                 <input
-                  type="tel"
-                  value={withdrawalAccount.mobileNumber}
+                  type="text"
+                  value={withdrawalAccount.accountNumber}
                   onChange={(e) =>
                     setWithdrawalAccount((prev) => ({
                       ...prev,
-                      mobileNumber: e.target.value,
+                      accountNumber: e.target.value,
                     }))
                   }
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Enter mobile number (e.g., 0241234567)"
+                  placeholder="Enter account number"
                 />
-                <p className="text-sm text-gray-500 mt-1">
-                  Enter your Ghanaian mobile number
-                </p>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Network Provider
+                  Bank Code
                 </label>
-                <select
-                  value={withdrawalAccount.network}
+                <input
+                  type="text"
+                  value={withdrawalAccount.bankCode}
                   onChange={(e) =>
                     setWithdrawalAccount((prev) => ({
                       ...prev,
-                      network: e.target.value,
+                      bankCode: e.target.value,
                     }))
                   }
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="">Select network</option>
-                  <option value="MTN">MTN</option>
-                  <option value="Vodafone">Vodafone</option>
-                  <option value="AirtelTigo">AirtelTigo</option>
-                </select>
+                  placeholder="Enter bank code"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Account Name
+                </label>
+                <input
+                  type="text"
+                  value={withdrawalAccount.name}
+                  onChange={(e) =>
+                    setWithdrawalAccount((prev) => ({
+                      ...prev,
+                      name: e.target.value,
+                    }))
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Enter account name"
+                />
               </div>
 
               <button
@@ -322,12 +331,13 @@ export default function WalletPage() {
                 disabled={
                   processing ||
                   !withdrawalAmount ||
-                  !withdrawalAccount.mobileNumber ||
-                  !withdrawalAccount.network
+                  !withdrawalAccount.accountNumber ||
+                  !withdrawalAccount.bankCode ||
+                  !withdrawalAccount.name
                 }
                 className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {processing ? "Processing..." : "Withdraw to Mobile Money"}
+                {processing ? "Processing..." : "Withdraw to Bank Account"}
               </button>
             </div>
           </div>

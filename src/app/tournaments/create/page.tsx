@@ -16,6 +16,9 @@ export default function CreateTournamentPage() {
     prize_pool: "",
     max_teams: "",
     schedule: "",
+    pubg_map: "",
+    pubg_mode: "",
+    pubg_perspective: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -27,6 +30,7 @@ export default function CreateTournamentPage() {
     "Valorant",
     "CS:GO",
     "Rocket League",
+    "PUBG Mobile",
     "Other",
   ];
 
@@ -190,7 +194,7 @@ export default function CreateTournamentPage() {
                   htmlFor="entry_fee"
                   className="block text-sm font-medium text-gray-700"
                 >
-                  Entry Fee (₦) *
+                  Entry Fee (GH₵) *
                 </label>
                 <input
                   type="number"
@@ -217,7 +221,7 @@ export default function CreateTournamentPage() {
                   htmlFor="prize_pool"
                   className="block text-sm font-medium text-gray-700"
                 >
-                  Prize Pool (₦) *
+                  Prize Pool (GH₵) *
                 </label>
                 <input
                   type="number"
