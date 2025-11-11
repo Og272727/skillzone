@@ -48,7 +48,7 @@ export default function DepositPage() {
       // Initialize Paystack payment
       const response = await initializePaystackPayment();
 
-      if (response.success) {
+      if ((response as { success: boolean }).success) {
         // Update user balance in database
         await updateUserBalance(parseFloat(formData.amount));
 
