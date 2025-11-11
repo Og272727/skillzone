@@ -55,6 +55,7 @@ export interface Transaction {
   status: "pending" | "completed" | "failed";
   tournament_id?: string;
   paystack_reference?: string;
+  currency?: string;
   created_at: string;
 }
 
