@@ -239,6 +239,22 @@ export default function WalletPage() {
             <h2 className="text-xl font-semibold text-gray-900 mb-4">
               Deposit Funds
             </h2>
+            <div className="mb-4">
+              <button
+                onClick={() => router.push("/deposit")}
+                className="w-full bg-green-600 text-white py-3 px-4 rounded-md hover:bg-green-700 font-semibold"
+              >
+                Add Funds via Paystack
+              </button>
+              <p className="text-sm text-gray-500 mt-2 text-center">
+                Secure payments with cards, mobile money, and bank transfers
+              </p>
+            </div>
+            <div className="border-t pt-4">
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                Quick Deposit
+              </h3>
+            </div>
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">

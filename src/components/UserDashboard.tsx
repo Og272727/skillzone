@@ -158,7 +158,7 @@ export default function UserDashboard() {
             </Link>
 
             <Link
-              href="/wallet"
+              href="/deposit"
               className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white p-6 rounded-lg text-center transition-all transform hover:scale-105"
             >
               <div className="text-4xl mb-4">💰</div>
