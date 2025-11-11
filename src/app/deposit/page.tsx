@@ -45,24 +45,45 @@ export default function DepositPage() {
     setLoading(true);
 
     try {
+      // Validate form data
+      if (
+        !formData.amount ||
+        !formData.firstName ||
+        !formData.lastName ||
+        !formData.email
+      ) {
+        alert("Please fill in all required fields.");
+        setLoading(false);
+        return;
+      }
+
+      const amount = parseFloat(formData.amount);
+      if (isNaN(amount) || amount < 1) {
+        alert("Please enter a valid amount (minimum GHS 1).");
+        setLoading(false);
+        return;
+      }
+
       // Initialize Paystack payment
       const response = await initializePaystackPayment();
 
       if ((response as { success: boolean }).success) {
         // Update user balance in database
-        await updateUserBalance(parseFloat(formData.amount));
+        await updateUserBalance(amount);
 
         // Show success and redirect
         alert(
-          `Payment Successful! GHS ${parseFloat(
-            formData.amount
-          ).toLocaleString()} added to your account`
+          `Payment Successful! GHS ${amount.toLocaleString()} added to your account`
         );
         router.push("/wallet");
+      } else {
+        alert("Payment was cancelled or failed. Please try again.");
       }
     } catch (error) {
       console.error("Payment failed:", error);
-      alert("Payment failed. Please try again.");
+      alert(
+        "Failed to initiate deposit. Please check your connection and try again."
+      );
     } finally {
       setLoading(false);
     }
