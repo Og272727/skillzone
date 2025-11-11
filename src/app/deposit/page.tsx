@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { paystackService } from "@/services/paystack";
 import { useAuth } from "@/hooks/useAuth";
 
 interface PaystackResponse {
@@ -64,80 +65,55 @@ export default function DepositPage() {
         return;
       }
 
+      // Create transaction record first
+      const reference = `dep_${Date.now()}_${user!.id}`;
+      const { error: transactionError } = await supabase
+        .from("transactions")
+        .insert([
+          {
+            user_id: user!.id,
+            type: "deposit",
+            amount: amount,
+            status: "pending",
+            paystack_reference: reference,
+            currency: "GHS",
+          },
+        ]);
+
+      if (transactionError) {
+        console.error("Transaction creation error:", transactionError);
+        alert("Failed to create transaction record. Please try again.");
+        setLoading(false);
+        return;
+      }
+
       // Initialize Paystack payment
-      const response = await initializePaystackPayment();
+      const paymentData = await paystackService.initializeTransaction(
+        formData.email,
+        amount,
+        reference
+      );
 
-      if ((response as { success: boolean }).success) {
-        // Update user balance in database
-        await updateUserBalance(amount);
-
-        // Show success and redirect
-        alert(
-          `Payment Successful! GHS ${amount.toLocaleString()} added to your account`
-        );
-        router.push("/wallet");
+      if (paymentData.status && paymentData.data.authorization_url) {
+        // Redirect to Paystack payment page
+        window.location.href = paymentData.data.authorization_url;
       } else {
-        alert("Payment was cancelled or failed. Please try again.");
+        // Update transaction status to failed
+        await supabase
+          .from("transactions")
+          .update({ status: "failed" })
+          .eq("paystack_reference", reference);
+
+        alert("Failed to initialize payment. Please try again.");
       }
     } catch (error) {
-      console.error("Payment failed:", error);
+      console.error("Payment initiation failed:", error);
       alert(
         "Failed to initiate deposit. Please check your connection and try again."
       );
     } finally {
       setLoading(false);
     }
-  };
-
-  const initializePaystackPayment = async () => {
-    return new Promise((resolve) => {
-      const handler = window.PaystackPop.setup({
-        key: "pk_live_125e185626fab5ba16eb9f1a7f8634230097ac09",
-        email: formData.email,
-        amount: parseFloat(formData.amount) * 100, // Convert to pesewas
-        currency: "GHS",
-        first_name: formData.firstName,
-        last_name: formData.lastName,
-        ref: "SKZ" + Date.now(), // Unique reference
-        callback: function (response: PaystackResponse) {
-          console.log("Payment successful:", response);
-          resolve({ success: true, reference: response.reference });
-        },
-        onClose: function () {
-          alert("Payment window closed.");
-          resolve({ success: false });
-        },
-      });
-
-      handler.openIframe();
-    });
-  };
-
-  const updateUserBalance = async (amount: number) => {
-    // Get current balance
-    const { data: userData } = await supabase
-      .from("profiles")
-      .select("wallet_balance")
-      .eq("id", user!.id)
-      .single();
-
-    const newBalance = (userData?.wallet_balance || 0) + amount;
-
-    // Update balance
-    await supabase
-      .from("profiles")
-      .update({ wallet_balance: newBalance })
-      .eq("id", user!.id);
-
-    // Record transaction
-    await supabase.from("transactions").insert({
-      user_id: user!.id,
-      type: "deposit",
-      amount: amount,
-      status: "completed",
-      paystack_reference: "PSK" + Date.now(),
-      currency: "GHS",
-    });
   };
 
   if (!user) {
